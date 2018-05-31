@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
-using System.Collections;
+using System.Collections.Generic;
 
 namespace ChildWin
 {
@@ -25,61 +21,19 @@ namespace ChildWin
         [DllImport("USER32.DLL")]
         public static extern bool SetForegroundWindow(IntPtr hWnd);
 
-        [DllImport("user32.dll")]
-        static extern IntPtr GetMenu(IntPtr hWnd);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        static extern bool GetMenuItemInfo(IntPtr hMenu, UInt32 uItem, bool fByPosition, [In, Out] MENUITEMINFO lpmii);
-        
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern uint GetDlgItemText(IntPtr hDlg, int nIDDlgItem, [Out] StringBuilder lpString, int nMaxCount);
-
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        static extern int GetWindowTextLength(IntPtr hWnd);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         public static extern IntPtr SendMessage(IntPtr hWnd, int Msg, int wParam, IntPtr lParam);
 
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, [Out] StringBuilder lParam);
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
-        public const Int32 WM_COMMAND = 0x00000111;
-        public const Int32 WM_LBUTTONDOWN = 0x00000201;
-        public const Int32 WM_LBUTTONUP = 0x00000202;
-        public const UInt32 MF_BYCOMMAND = 0x00000000;
-        public const UInt32 MF_BYPOSITION = 0x00000400;
-        public const Int32 WM_GETTEXTLENGTH = 0x0000000D;
-        public const Int32 WM_GETTEXT = 0x0000000E;
-        List<IntPtr> allChildWindows;
-        /*
-        Public Const WM_CHAR = &H102;
-Public Const WM_SETTEXT = &HC;
-Public Const WM_KEYDOWN = &H100;
-Public Const WM_KEYUP = &H101;
-Public Const WM_LBUTTONDOWN = &H201;
-Public Const WM_LBUTTONUP = &H202;
-Public Const WM_CLOSE = &H10;
-Public Const WM_COMMAND = &H111;
-Public Const WM_CLEAR = &H303;
-Public Const WM_DESTROY = &H2;
-Public Const WM_GETTEXT = &HD;
-Public Const WM_GETTEXTLENGTH = &HE;
-Public Const WM_LBUTTONDBLCLK = &H203;*/
-        /*
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool EnumChildWindows(IntPtr hwndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);*/
         [DllImport("user32")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool EnumChildWindows(IntPtr window, EnumWindowProc callback, IntPtr i);
 
-        //public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-        public delegate bool EnumWindowProc(IntPtr hWnd, IntPtr lParam);
-        //private delegate bool EnumedWindow(IntPtr handleWindow, ArrayList handles);
+        public const Int32 WM_COMMAND = 0x00000111;
+        public const Int32 WM_LBUTTONDOWN = 0x00000201;
+        public const Int32 WM_LBUTTONUP = 0x00000202;    
 
         [Flags]
         enum MIIM
@@ -118,46 +72,30 @@ Public Const WM_LBUTTONDBLCLK = &H203;*/
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            //IntPtr calculatorHandle = FindWindow(null, "Калькулятор ‎- Калькулятор");
-            IntPtr calculatorHandle = FindWindow("CalcFrame", "Калькулятор");
-            if (calculatorHandle == IntPtr.Zero)
-            {
-                MessageBox.Show("Calculator is not running.");
-                return;
-            }
-            SetForegroundWindow(calculatorHandle);
-            /* foreach (var window in GetChildWindows(calculatorHandle))
-             {
-                 this.comboBox1.Items.Add(window.ToString());
-             }*/
-            allChildWindows = new WindowHandleInfo(calculatorHandle).GetAllChildHandles();
-            this.comboBox1.Items.Clear();
-            StringBuilder szItemName = new StringBuilder();
-            foreach (var window in allChildWindows)
-            {
-                //this.comboBox1.Items.Add(window.ToString());
-                this.comboBox1.Items.Add(GetText(window));
-                //GetDlgItemText(window, 0, szItemName, 80);
-                //this.comboBox1.Items.Add(szItemName.ToString());
-                //SendMessage(window, WM_COMMAND, 0, IntPtr.Zero);
-            }
-            
-            /*
-            IntPtr hMenu = GetMenu(calculatorHandle);
-            this.comboBox1.Items.Add(hMenu.ToString());
-            MENUITEMINFO mif = new MENUITEMINFO(MIIM.STRING | MIIM.ID);
-            bool res = GetMenuItemInfo(hMenu, 0, true, mif);
-            if (res)
-            {
-                ++mif.cch;
-                mif.dwTypeData = new String(' ', (int)mif.cch);
-                res = GetMenuItemInfo(hMenu, 0, true, mif);
-                this.comboBox1.Items.Add(mif.dwItemData);
-            }*/
-        }
+        public delegate bool EnumWindowProc(IntPtr hWnd, IntPtr lParam);
 
+        List<IntPtr> allChildWindows;
+        List<IntPtr> listButton =  new List<IntPtr>();
+
+        string[] buttonName =
+        {
+            "MC", "bcks", "7", "4", "1", "0",  "MR",
+            "CE", "8", "5", "2", "MS", "C", "9", "6",
+            "3", ",", "M+", "+-",  "/", "*", "-", "+",
+            "M-", "sqrt", "%", "1/x", "="
+        };
+
+        private (int Index, string Button)[] buttonTuple = new (int Index, string Button)[]
+        {
+            (0,"MC"), (1,"bcks"), (2,"7"), (3,"4"),
+            (4,"1"), (5,"0"), (6,"MR"), (7,"CE"),
+            (8,"8"), (9,"5"), (10,"2"), (11,"MS"),
+            (12,"C"), (13,"9"), (14,"6"), (15,"3"),
+            (16,","), (17,"M+"), (18,"+-"), (19,"/"),
+            (20,"*"), (21,"-"), (22,"+"), (23,"M-"),
+            (24,"Корень"), (25,"%"), (26,"Дробь"), (27,"=")
+        };
+        /*
         public static List<IntPtr> GetChildWindows(IntPtr parent)
         {
             List<IntPtr> result = new List<IntPtr>();
@@ -184,31 +122,66 @@ Public Const WM_LBUTTONDBLCLK = &H203;*/
                 throw new InvalidCastException("GCHandle Target could not be cast as List<IntPtr>");
             }
             list.Add(handle);
-            //  You can modify this to check to see if you want to cancel the operation, then return a null here
             return true;
+        }*/
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            IntPtr calculatorHandle = FindWindow("CalcFrame", "Калькулятор");
+            if (calculatorHandle == IntPtr.Zero)
+            {
+                MessageBox.Show("Calculator is not running.");
+                return;
+            }
+            SetForegroundWindow(calculatorHandle);
+            allChildWindows = new WindowHandleInfo(calculatorHandle).GetAllChildHandles();
+            this.comboBox1.Items.Clear();
+            StringBuilder szItemName = new StringBuilder();
+            StringBuilder ClassName = new StringBuilder(256);
+            foreach (var window in allChildWindows)
+            {
+                int countName = GetClassName(window, ClassName, ClassName.Capacity);
+                if (countName != 0 && ClassName.ToString() == "Button")
+                {
+                    
+                    listButton.Add(window);
+                }
+            }
+            foreach (var button in this.buttonTuple.OrderBy(i => i.Button))
+            {
+                this.comboBox1.Items.Add(button.Button);
+            }
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            SendMessage(allChildWindows[this.comboBox1.SelectedIndex], WM_LBUTTONDOWN, 0, IntPtr.Zero);
-            SendMessage(allChildWindows[this.comboBox1.SelectedIndex], WM_LBUTTONUP, 0, IntPtr.Zero);
-        }
-
-        public static string GetText(IntPtr hWnd)
-        {
-            // Allocate correct string length first
-            int length = GetWindowTextLength(hWnd);
-            StringBuilder sb = new StringBuilder(length + 1);
-            GetWindowText(hWnd, sb, sb.Capacity);
-            return sb.ToString();
-        }
-
-        public static string GetWindowTextRaw(IntPtr hwnd)
-        {
-            int length = (int)SendMessage(hwnd, WM_GETTEXTLENGTH, 0, IntPtr.Zero);
-            StringBuilder sb = new StringBuilder(length + 1);
-            SendMessage(hwnd, WM_GETTEXT, (IntPtr)sb.Capacity, sb);
-            return sb.ToString();
+            if (this.comboBox1.Text.ToString().Length != 0)
+            {
+                SendMessage(listButton[this.buttonTuple.OrderBy(i => i.Button).ToArray()[this.comboBox1.SelectedIndex].Index], WM_LBUTTONDOWN, 0, IntPtr.Zero);
+                SendMessage(listButton[this.buttonTuple.OrderBy(i => i.Button).ToArray()[this.comboBox1.SelectedIndex].Index], WM_LBUTTONUP, 0, IntPtr.Zero);
+            }
         }
     }
-}
+}//public const UInt32 MF_BYCOMMAND = 0x00000000;
+//public const UInt32 MF_BYPOSITION = 0x00000400;
+//public const Int32 WM_GETTEXTLENGTH = 0x0000000D;
+//public const Int32 WM_GETTEXT = 0x0000000E;
+
+//[DllImport("user32.dll")]
+//static extern IntPtr GetMenu(IntPtr hWnd);
+
+//[DllImport("user32.dll", CharSet = CharSet.Auto)]
+//static extern bool GetMenuItemInfo(IntPtr hMenu, UInt32 uItem, bool fByPosition, [In, Out] MENUITEMINFO lpmii);
+
+
+//[DllImport("user32.dll", SetLastError = true)]
+//static extern uint GetDlgItemText(IntPtr hDlg, int nIDDlgItem, [Out] StringBuilder lpString, int nMaxCount);
+
+//[DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+//static extern int GetWindowTextLength(IntPtr hWnd);
+
+//[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+//static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+//[DllImport("user32.dll", CharSet = CharSet.Auto)]
+//static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, [Out] StringBuilder lParam);
